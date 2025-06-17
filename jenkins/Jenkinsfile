@@ -1,28 +1,26 @@
 pipeline {
     agent any
-    options {
-        skipStagesAfterUnstable()
+
+    tools {
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "maven3"
     }
+
     stages {
         stage('Build') {
             steps {
-                sh 'mvn -B -DskipTests clean package'
+                // Get some code from a GitHub repository
+                git branch: 'main', url: 'https://github.com/brillkuo/myMaven2.git'
+
+                // Run Maven on a Unix agent.
+                sh "mvn clean package"
+
+                // To run Maven on a Windows agent, use
+                // bat "mvn -Dmaven.test.failure.ignore=true clean package"
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'vb_ubuntu64_jdk8', sshCredentials: [encryptedPassphrase: '{AQAAABAAAAAQdyy7bEnjfr3Yx479rRIiyGoI6X7fw7F0YH8LD9XmYLM=}', key: '', keyPath: '', username: 'brill'], transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: 'target', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '**/*.jar')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
             }
-        }
-        stage('Test') {
-            steps {
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
-            }
-        }
-        stage('Deliver') { 
-            steps {
-                sh './jenkins/scripts/deliver.sh' 
-            }
+
+
         }
     }
 }
